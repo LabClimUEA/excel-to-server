@@ -1,3 +1,4 @@
 excel-stations/
 .env
 dados/
+__pycache__/
