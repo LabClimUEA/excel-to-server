@@ -28,7 +28,7 @@ def carregar_env(caminho=Path(".env")):
 
             chave, valor = linha.split("=", 1)
             chave = chave.strip()
-            valor = valor.strip().strip("\"").strip("'")
+            valor = valor.strip().strip('"').strip("'")
             if chave:
                 os.environ.setdefault(chave, valor)
 
@@ -157,15 +157,12 @@ def dividir_em_lotes(items, tamanho_lote):
 
 
 def postar_lote(base_url, token, codigo_estacao, items, timeout):
-    url = (
-        f"{base_url.rstrip('/')}/hydrological-data/station/"
-        f"{codigo_estacao}/historic"
-    )
+    url = f"{base_url.rstrip('/')}/hydrological-data/station/{codigo_estacao}/historic"
     corpo = json.dumps({"items": items}).encode("utf-8")
     requisicao = urllib.request.Request(
         url,
         data=corpo,
-        method="POST",
+        method="PUT",
         headers={
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
@@ -214,9 +211,7 @@ def importar_estacao(caminho, codigo_estacao, args):
                 skipped = int(resposta.get("skipped", 0))
                 total_created += created
                 total_skipped += skipped
-                print(
-                    f"   lote {indice}: created={created} skipped={skipped}"
-                )
+                print(f"   lote {indice}: created={created} skipped={skipped}")
                 if args.batch_delay > 0:
                     time.sleep(args.batch_delay)
                 break
@@ -239,9 +234,7 @@ def importar_estacao(caminho, codigo_estacao, args):
                     ) from erro
                 time.sleep(args.retry_delay)
 
-    print(
-        f"   total {nome_estacao}: created={total_created} skipped={total_skipped}"
-    )
+    print(f"   total {nome_estacao}: created={total_created} skipped={total_skipped}")
     return total_created, total_skipped
 
 
@@ -254,8 +247,7 @@ def parse_args():
     parser.add_argument(
         "--base-url",
         default=os.getenv("HYDRO_API_BASE_URL"),
-        help="Base da API, ex.: https://dominio.com/api "
-        "(ou env HYDRO_API_BASE_URL).",
+        help="Base da API, ex.: https://dominio.com/api (ou env HYDRO_API_BASE_URL).",
     )
     parser.add_argument(
         "--token",
@@ -327,7 +319,9 @@ def main():
         except RuntimeError as erro:
             mensagem_erro = str(erro)
             if mensagem_erro.startswith("HTTP 404"):
-                print(f"AVISO {nome_estacao} ({codigo_estacao}): estacao nao cadastrada na API; pulando.")
+                print(
+                    f"AVISO {nome_estacao} ({codigo_estacao}): estacao nao cadastrada na API; pulando."
+                )
                 estacoes_nao_cadastradas.append(f"{nome_estacao} ({codigo_estacao})")
                 continue
 
@@ -351,7 +345,9 @@ def main():
     if args.dry_run:
         print("OK Dry-run concluido sem chamar a API.")
     else:
-        print(f"OK Importacao concluida: created={total_created} skipped={total_skipped}")
+        print(
+            f"OK Importacao concluida: created={total_created} skipped={total_skipped}"
+        )
 
     return 0
 

@@ -22,7 +22,7 @@ Instale as dependencias em um ambiente virtual:
 
 ```bash
 python -m venv .venv
-.venv/bin/pip install pandas
+.venv/bin/pip install -r requirements.txt
 ```
 
 ## Estrutura esperada
