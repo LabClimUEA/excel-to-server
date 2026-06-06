@@ -14,6 +14,7 @@ from pathlib import Path
 PASTA_BRUTOS = Path("excel-stations")
 PASTA_HISTORICOS = Path("dados") / "historicos"
 SNAPSHOT_HORA = "07:00:00"
+DEFAULT_USER_AGENT = "curl/8.0.0"
 
 
 def carregar_env(caminho=Path(".env")):
@@ -156,16 +157,18 @@ def dividir_em_lotes(items, tamanho_lote):
         yield items[inicio : inicio + tamanho_lote]
 
 
-def postar_lote(base_url, token, codigo_estacao, items, timeout):
+def postar_lote(base_url, token, codigo_estacao, items, timeout, user_agent):
     url = f"{base_url.rstrip('/')}/hydrological-data/station/{codigo_estacao}/historic"
     corpo = json.dumps({"items": items}).encode("utf-8")
     requisicao = urllib.request.Request(
         url,
         data=corpo,
-        method="PUT",
+        method="POST",
         headers={
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": user_agent,
         },
     )
 
@@ -206,6 +209,7 @@ def importar_estacao(caminho, codigo_estacao, args):
                     codigo_estacao,
                     lote,
                     args.timeout,
+                    args.user_agent,
                 )
                 created = int(resposta.get("created", 0))
                 skipped = int(resposta.get("skipped", 0))
@@ -269,6 +273,11 @@ def parse_args():
     parser.add_argument("--retries", type=int, default=5)
     parser.add_argument("--retry-delay", type=float, default=30.0)
     parser.add_argument("--batch-delay", type=float, default=2.0)
+    parser.add_argument(
+        "--user-agent",
+        default=os.getenv("HYDRO_API_USER_AGENT", DEFAULT_USER_AGENT),
+        help="User-Agent enviado para a API (ou env HYDRO_API_USER_AGENT).",
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
